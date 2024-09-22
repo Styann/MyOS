@@ -1,11 +1,11 @@
-typedef unsigned char uint8_t ;
-
-const uint8_t video_mem = (char*)0xB8000;
-
 int kernel_main(void) {
-
-	video_mem[0] = 'X';
-	video_mem[1] = 0x07;
+	volatile unsigned char *const video_mem = (unsigned char *)0xB8000;
+	video_mem[0] = 'h';
+	video_mem[1] = 'e';
+	video_mem[2] = 'l';
+	video_mem[3] = 'l';
+	video_mem[4] = 'o';
+	video_mem[5] = 0x07;
 
 	return 0;
 }

@@ -1,0 +1,1 @@
+Intel Core i3-5005U CPU 2.00GHz

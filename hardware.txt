@@ -1,9 +1,0 @@
-CPU -> Intel Core i3-5005U CPU 2.00GHz
-
-x64
-
-64 bits
-
-RAM -> 8go
-
-SSD -> 500go

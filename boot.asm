@@ -6,11 +6,14 @@
 ; org MAGIC_BOOT_ADDR
 bits 16
 
-main: ; fn (void) -> void
+start: ; fn (void) -> void
     mov ax, 0x07C0
     mov ds, ax
 
     mov si, hello_msg
+    call println
+
+    mov si, kernel_loading_msg
     call println
 
     call load_kernel
@@ -26,51 +29,15 @@ main: ; fn (void) -> void
         call println
         jmp $
 
+%include "println.asm"
 ; constant strings
-hello_msg:
-    db "Hello, World! From the bootloader.", 0
-
-kernel_loading_msg:
-    db "Loading kernel...", 0
-
-kernel_loading_success_msg:
-    db "Kernel successfully loaded.", 0
-
-kernel_loading_failed_msg:
-    db "Error, kernel loading failed.", 0
-
-; functions
-println: ; fn (si: char*) ->
-    mov ah, 0x0E ; enter in TTY mode
-
-    .loop:
-        mov al, [si]
-        int 0x10
-        inc si
-
-        cmp al, 0
-        jnz .loop
-
-    mov al, 0x0A ; \n
-    int 0x10
-
-    ; reading cursor position ???
-    mov ah, 0x03
-    mov bh, 0
-    int 0x10
-
-    ; moving the cursor to the beginning
-    mov ah, 0x02
-    mov dl, 0
-    int 0x10
-
-    ret
+hello_msg: db "Hello, World! From the bootloader.", 0
+kernel_loading_msg: db "Loading kernel...", 0
+kernel_loading_success_msg: db "Kernel successfully loaded.", 0
+kernel_loading_failed_msg: db "Error, kernel loading failed.", 0
 
 load_kernel: ; fn (void) -> cf:bool
-    mov si, kernel_loading_msg
-    call println
-
-    ; set kernel segment using through ax
+    ; set kernel segment through ax
     mov ax, KERNEL_SEGMENT_ADDR
     mov es, ax
 

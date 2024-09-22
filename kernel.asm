@@ -1,36 +1,59 @@
-%include "gdt.asm"
-
 bits 16
+; extern kernel_main
 
 start:
-    mov ax, 0x0E
-    mov al, 'C'
-    int 0x10
+    mov ax, cs
+    mov ds, ax
+
+    mov si, hello_world
+    call println
 
     jmp $
 
-;     mov ax, cs
-;     mov ds, ax
+;     cli
+;     lgdt [gdtr - start] ; start:gdtr - start
+;     sti
 
-;     mov si, hello_string
-;     call print_string
-    
-;     jmp $
+;     call enter_protected_mode
+;     call init_video_mode
+;     call 0x08:start_kernel
 
-; print_string:
-;     mov ah, 0Eh
-
-; print_char:
-;     lodsb
-    
-;     cmp al, 0
-;     je done
-    
-;     int 10h
-    
-;     jmp print_char
-
-; done:
+; enter_protected_mode:
+;     mov eax, cr0
+;     or eax, 1
+;     mov cr0, eax
 ;     ret
-    
-; hello_string db 'Hello World!, From Simple Assembly 539kernel!', 0
+
+; init_video_mode:
+;     mov ah, 0x00
+;     mov al, 0x03
+;     int 0x10
+
+;     mov ah, 0x01
+;     mov cx, 0x2000
+;     int 0x10
+
+;     ret
+
+%include "println.asm"
+hello_world: db "Hello, World!", 0
+
+; bits 32
+; start_kernel:
+;     cli
+;     ; setting segment registers
+;     mov eax, 0x10
+;     mov ds, eax
+;     mov ss, eax
+
+;     mov eax, 0
+;     mov es, eax
+
+;     ; setting gp segment registers
+;     mov fs, eax
+;     mov gs, eax
+;     sti
+
+;     call kernel_main
+
+; %include "gdt.asm"
