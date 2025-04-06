@@ -1,59 +1,41 @@
-bits 16
-; extern kernel_main
-
-start:
+[bits 16]
+kernel_entry:
     mov ax, cs
     mov ds, ax
 
-    mov si, hello_world
-    call println
+    mov si, kernel_entry_msg
+    call bios_println
+
+    mov ax, 87
+    call bios_printn
+
+    cli
+    lgdt [gdt_descriptor]
+    ; enter protected mode
+    mov eax, cr0
+    or eax, 1
+    mov cr0, eax
+
+    jmp CODE_SEGMENT:protected_mode_entry
+
+%include "gdt.asm"
+%include "lib/bios/println.asm"
+%include "lib/bios/printn.asm"
+
+kernel_entry_msg: db "Hello, World! From the kernel entry", 0
+
+[bits 32]
+protected_mode_entry:
+    mov ax, DATA_SEGMENT
+    mov ds, ax
+    mov ss, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
+    mov ebp, 0x90000
+    mov esp, esp
 
     jmp $
 
-;     cli
-;     lgdt [gdtr - start] ; start:gdtr - start
-;     sti
-
-;     call enter_protected_mode
-;     call init_video_mode
-;     call 0x08:start_kernel
-
-; enter_protected_mode:
-;     mov eax, cr0
-;     or eax, 1
-;     mov cr0, eax
-;     ret
-
-; init_video_mode:
-;     mov ah, 0x00
-;     mov al, 0x03
-;     int 0x10
-
-;     mov ah, 0x01
-;     mov cx, 0x2000
-;     int 0x10
-
-;     ret
-
-%include "println.asm"
-hello_world: db "Hello, World!", 0
-
-; bits 32
-; start_kernel:
-;     cli
-;     ; setting segment registers
-;     mov eax, 0x10
-;     mov ds, eax
-;     mov ss, eax
-
-;     mov eax, 0
-;     mov es, eax
-
-;     ; setting gp segment registers
-;     mov fs, eax
-;     mov gs, eax
-;     sti
-
-;     call kernel_main
-
-; %include "gdt.asm"
+    ; jmp $

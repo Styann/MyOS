@@ -1,25 +1,25 @@
-println: ; fn (si: char*) ->
-    mov ah, 0x0E ; enter in TTY mode
+%define VIDEO_MEM_ADDR 0xB8000
+%define WHITE_TEXT 0x0F
+
+; @param {char *} esi
+[bits 32]
+println:
+    mov ebx, esi
+    mov edx, VIDEO_MEM_ADDR
 
     .loop:
-        mov al, [si]
-        int 0x10
-        inc si
+        mov al, [ebx]
 
         cmp al, 0
-        jnz .loop
+        jz .end
 
-    mov al, 0x0A ; \n
-    int 0x10
+        mov ah, WHITE_TEXT
+        mov [edx], ax
 
-    ; reading cursor position ???
-    mov ah, 0x03
-    mov bh, 0
-    int 0x10
+        add edx, 2
+        inc ebx
 
-    ; moving the cursor to the beginning
-    mov ah, 0x02
-    mov dl, 0
-    int 0x10
+        jmp .loop
 
-    ret
+    .end:
+        ret

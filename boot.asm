@@ -1,56 +1,62 @@
+%include "lib/bios/interrupts.asm"
 %define MAGIC_BOOT_ADDR 0x7C00
-%define KERNEL_SEGMENT_ADDR 0x0900
-%define KERNEL_OFFSET_ADDR 0x0000
-%define KERNEL_SECTORS_SIZE 15
+%define KERNEL_LOAD_SEGMENT 0x1000
+%define KERNEL_LOAD_OFFSET 0x0000
+%define KERNEL_SECTORS_LENGTH 1
 
-; org MAGIC_BOOT_ADDR
-bits 16
-
+[org MAGIC_BOOT_ADDR]
+[bits 16]
 start: ; fn (void) -> void
-    mov ax, 0x07C0
+    ; setup segment registers
+    xor ax, ax
     mov ds, ax
+    mov ss, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
+    ; setup stack
+    mov bp, 0x7000
+    mov sp, bp
 
     mov si, hello_msg
-    call println
-
-    mov si, kernel_loading_msg
-    call println
+    call bios_println
 
     call load_kernel
     jc kernel_loading_error
 
     kernel_loading_success:
         mov si, kernel_loading_success_msg
-        call println
-        jmp KERNEL_SEGMENT_ADDR:KERNEL_OFFSET_ADDR
-
+        call bios_println
+        jmp KERNEL_LOAD_SEGMENT:KERNEL_LOAD_OFFSET
     kernel_loading_error:
         mov si, kernel_loading_failed_msg
-        call println
+        call bios_println
         jmp $
 
-%include "println.asm"
-; constant strings
-hello_msg: db "Hello, World! From the bootloader.", 0
-kernel_loading_msg: db "Loading kernel...", 0
-kernel_loading_success_msg: db "Kernel successfully loaded.", 0
-kernel_loading_failed_msg: db "Error, kernel loading failed.", 0
+%include "gdt.asm"
+%include "lib/bios/println.asm"
 
 load_kernel: ; fn (void) -> cf:bool
-    ; set kernel segment through ax
-    mov ax, KERNEL_SEGMENT_ADDR
+    ; set the address we want the kernel to be loaded
+    mov ax, KERNEL_LOAD_SEGMENT
     mov es, ax
 
-    mov ah, 0x02 ; BIOS load sector mode
-    mov al, KERNEL_SECTORS_SIZE ; number of sectors
+    mov ah, BIOS_READ_SECTOR ; BIOS load sector mode
+    mov al, KERNEL_SECTORS_LENGTH ; number of sectors to load
     mov ch, 0 ; cylinder number
-    mov cl, 2 ; sector number
+    mov cl, 2 ; start reading from 2nd sector
     mov dh, 0 ; head number
     mov dl, 0x80 ; type of disk (hard disk #0)
-    mov bx, KERNEL_OFFSET_ADDR ; memory addr offset where the kernel will be loaded
+    mov bx, KERNEL_LOAD_OFFSET
 
-    int 0x13
+    int BIOS_DISK_INT_VECTOR
+
     ret
+
+hello_msg: db "Hello, World! Loading kernel...", 0
+kernel_loading_success_msg: db "Kernel successfully loaded.", 0
+kernel_loading_failed_msg: db "Error, kernel loading failed.", 0
 
 ; fill bootsector remaining space
 times 510 - ($ - $$) db 0x00
